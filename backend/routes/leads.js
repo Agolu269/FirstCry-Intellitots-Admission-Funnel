@@ -14,27 +14,59 @@ router.post('/',
       child_age_months=null, notes=null, assigned_to=null
     } = req.body;
     try {
-      const result = await db.query(
-        `INSERT INTO leads
-           (child_name,parent_name,parent_phone,parent_email,
-            lead_source,child_age_months,notes,assigned_to)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         RETURNING id,child_name,parent_name,parent_phone,
-                   lead_source,current_stage,created_at`,
-        [child_name.trim(),parent_name.trim(),parent_phone.trim(),
-         parent_email,lead_source,child_age_months,notes,assigned_to]
-      );
-      const lead = result.rows[0];
-      await db.query(
-        `INSERT INTO lead_status_logs (lead_id,from_stage,to_stage,note)
-         VALUES ($1,NULL,'enquiry','Lead created')`,
-        [lead.id]
-      );
-      return res.status(201).json({ success:true, lead });
-    } catch (err) {
-      console.error('Create lead error:', err.message);
-      return res.status(500).json({ success:false, error:'Server error.' });
-    }
+  // Check for duplicate lead
+  const duplicate = await db.query(
+    `SELECT id
+     FROM leads
+     WHERE parent_phone = $1
+       AND child_name = $2`,
+    [parent_phone.trim(), child_name.trim()]
+  );
+
+  if (duplicate.rows.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'A lead with this child name and phone number already exists.'
+    });
+  }
+
+  const result = await db.query(
+    `INSERT INTO leads
+      (child_name,parent_name,parent_phone,parent_email,
+       lead_source,child_age_months,notes,assigned_to)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+     RETURNING id,child_name,parent_name,parent_phone,
+               lead_source,current_stage,created_at`,
+    [
+      child_name.trim(),
+      parent_name.trim(),
+      parent_phone.trim(),
+      parent_email,
+      lead_source,
+      child_age_months,
+      notes,
+      assigned_to
+    ]
+  );
+
+  const lead = result.rows[0];
+
+  await db.query(
+    `INSERT INTO lead_status_logs (lead_id,from_stage,to_stage,note)
+     VALUES ($1,NULL,'enquiry','Lead created')`,
+    [lead.id]
+  );
+
+  return res.status(201).json({ success: true, lead });
+
+} catch (err) {
+  console.error(err);
+  return res.status(500).json({
+    success: false,
+    error: err.message
+  });
+}
+    
   }
 );
 

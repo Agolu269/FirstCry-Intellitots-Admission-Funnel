@@ -16,7 +16,8 @@ function validate(f) {
   if (!f.child_name.trim())   e.child_name   = 'Child name is required.';
   if (!f.parent_name.trim())  e.parent_name  = 'Parent name is required.';
   if (!f.parent_phone.trim()) e.parent_phone = 'Phone number is required.';
-  else if (!/^\+?[0-9]{10,15}$/.test(f.parent_phone.trim())) e.parent_phone = 'Enter valid 10-15 digit number.';
+ else if (!/^[0-9]{10}$/.test(f.parent_phone.trim()))
+  e.parent_phone = 'Phone number must contain exactly 10 digits.';
   if (f.parent_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.parent_email)) e.parent_email = 'Enter valid email.';
   if (!f.lead_source) e.lead_source = 'Please select a lead source.';
   if (f.child_age_months && (isNaN(f.child_age_months)||+f.child_age_months<12||+f.child_age_months>96))
@@ -57,8 +58,13 @@ export default function EnquiryPage() {
       setMessage(`✓ Enquiry created for ${res.data.lead.child_name}!`);
       setForm(EMPTY); setErrors({});
     } catch (err) {
-      setStatus('error'); setMessage(err.message);
-    }
+  setStatus('error');
+  setMessage(
+    err.response?.data?.error ||
+    err.message ||
+    'Something went wrong.'
+  );
+}
   }
 
   return (
@@ -74,7 +80,7 @@ export default function EnquiryPage() {
           <div className="form-grid">
             <div className="form-group">
               <label>Child Name<span className="req"> *</span></label>
-              <input name="child_name" type="text" placeholder="e.g. Aarav Sharma"
+              <input name="child_name" type="text" placeholder=""
                 value={form.child_name} onChange={handleChange} className={errors.child_name?'err':''}/>
               {errors.child_name && <span className="err-msg">{errors.child_name}</span>}
             </div>
@@ -87,19 +93,31 @@ export default function EnquiryPage() {
             </div>
             <div className="form-group">
               <label>Parent / Guardian Name<span className="req"> *</span></label>
-              <input name="parent_name" type="text" placeholder="e.g. Priya Sharma"
+              <input name="parent_name" type="text" placeholder=""
                 value={form.parent_name} onChange={handleChange} className={errors.parent_name?'err':''}/>
               {errors.parent_name && <span className="err-msg">{errors.parent_name}</span>}
             </div>
             <div className="form-group">
               <label>Contact Number<span className="req"> *</span></label>
-              <input name="parent_phone" type="tel" placeholder="e.g. 9876543210"
-                value={form.parent_phone} onChange={handleChange} className={errors.parent_phone?'err':''}/>
+              <input
+  name="parent_phone"
+  type="tel"
+  placeholder=""
+  maxLength={10}
+  value={form.parent_phone}
+  onChange={(e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setForm((p) => ({ ...p, parent_phone: value }));
+    if (errors.parent_phone)
+      setErrors((p) => ({ ...p, parent_phone: undefined }));
+  }}
+  className={errors.parent_phone ? 'err' : ''}
+/>
               {errors.parent_phone && <span className="err-msg">{errors.parent_phone}</span>}
             </div>
             <div className="form-group">
               <label>Email Address</label>
-              <input name="parent_email" type="email" placeholder="e.g. priya@email.com"
+              <input name="parent_email" type="email" placeholder=""
                 value={form.parent_email} onChange={handleChange} className={errors.parent_email?'err':''}/>
               {errors.parent_email && <span className="err-msg">{errors.parent_email}</span>}
             </div>
@@ -113,7 +131,7 @@ export default function EnquiryPage() {
             </div>
             <div className="form-group full-width">
               <label>Notes</label>
-              <textarea name="notes" placeholder="e.g. Interested in Nursery, July batch…"
+              <textarea name="notes" placeholder=""
                 value={form.notes} onChange={handleChange}/>
             </div>
           </div>

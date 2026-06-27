@@ -39,7 +39,9 @@ export default function LeadsPage() {
     finally { setLoading(false); }
   }, [filters.stage, filters.source, filters.search]);
 
-  useEffect(() => { fetchLeads(); }, [fetchLeads]);
+  useEffect(() => {
+  fetchLeads();
+}, [fetchLeads]);
 
   return (
     <div className="page">
@@ -60,7 +62,18 @@ export default function LeadsPage() {
           <option value="">All Sources</option>
           {Object.entries(SOURCE_LABEL).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        <button className="btn btn-secondary btn-sm" onClick={fetchLeads}>Refresh</button>
+        <button
+  className="btn btn-secondary btn-sm"
+  onClick={() => {
+    setFilters({
+      stage: '',
+      source: '',
+      search: ''
+    });
+  }}
+>
+  Refresh
+</button>
       </div>
       <div className="card" style={{padding:0}}>
         {loading && <div style={{padding:'2rem',textAlign:'center',color:'var(--muted)'}}>Loading…</div>}

@@ -14,7 +14,7 @@ function requireFields(fields) {
       return res.status(400).json({ success:false, error:`Missing: ${missing.join(', ')}` });
     }
     next();
-  };
+  }; 
 }
 
 function validateLeadSource(req, res, next) {
@@ -26,8 +26,8 @@ function validateLeadSource(req, res, next) {
 
 function validatePhone(req, res, next) {
   const phone = String(req.body.parent_phone || '').trim();
-  if (!/^\+?[0-9]{10,15}$/.test(phone)) {
-    return res.status(400).json({ success:false, error:'Phone must be 10-15 digits.' });
+  if (!/^[0-9]{10}$/.test(phone)) {
+    return res.status(400).json({ success:false, error:'Phone number must contain exactly 10 digits.' });
   }
   next();
 }
